@@ -6,6 +6,25 @@ export interface ValidationResult {
 }
 
 /**
+ * Validates a ticker symbol input (e.g. 1-5 alphabetic characters)
+ */
+export function validateTickerSymbol(symbol: string): ValidationResult {
+  const errors: string[] = [];
+  const trimmed = symbol ? symbol.trim().toUpperCase() : '';
+
+  if (!trimmed) {
+    errors.push('Ticker symbol cannot be empty.');
+  } else if (!/^[A-Z]{1,5}$/.test(trimmed)) {
+    errors.push('Ticker symbol must be 1 to 5 letters (A-Z) with no numbers or special characters.');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
  * Validates stock quote data integrity
  */
 export function validateStockQuote(quote: Partial<StockQuote>): ValidationResult {
