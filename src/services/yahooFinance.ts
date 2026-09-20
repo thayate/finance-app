@@ -159,7 +159,8 @@ export class FinanceDataService {
   }
 
   /**
-   * Fetch live or mock data for quote
+   * Fetch live or mock data for quote.
+   * Throws an explicit error if the symbol is unavailable without silently falling back to another company.
    */
   public async getQuote(symbol: string): Promise<StockQuote> {
     const sym = symbol.toUpperCase();
@@ -169,33 +170,21 @@ export class FinanceDataService {
         const url = `${this.apiBaseUrl}/${encodeURIComponent(sym)}?range=${range}&interval=${interval}`;
         const response = await fetch(url);
         if (!response.ok) {
-          throw new Error(`Failed to fetch quote for ${sym}: ${response.statusText}`);
+          throw new Error(`No data available for symbol '${sym}'`);
         }
         const data: YahooChartResponse = await response.json();
         const normalized = this.normalizeYahooResponse(sym, '1D', data);
         return normalized.quote;
       }
-    } catch (err) {
-      if (!this.useMockFallback) throw err;
+    } catch (err: any) {
+      if (!this.useMockFallback) {
+        throw new Error(err?.message || `No data available for symbol '${sym}'`);
+      }
     }
 
     const mock = MOCK_QUOTES[sym];
     if (!mock) {
-      const company = this.trackedCompanies.find((c) => c.symbol === sym);
-      return {
-        symbol: sym,
-        name: company?.name || `${sym} Inc.`,
-        price: 150.0,
-        change: 1.25,
-        changePercent: 0.84,
-        high: 152.0,
-        low: 149.0,
-        open: 149.5,
-        previousClose: 148.75,
-        volume: 5000000,
-        currency: 'USD',
-        lastUpdated: new Date().toISOString(),
-      };
+      throw new Error(`No data available for symbol '${sym}'`);
     }
     return mock;
   }
@@ -206,14 +195,19 @@ export class FinanceDataService {
   public async getQuotes(symbols: string[]): Promise<Record<string, StockQuote>> {
     const quotes: Record<string, StockQuote> = {};
     const promises = symbols.map(async (sym) => {
-      quotes[sym.toUpperCase()] = await this.getQuote(sym);
+      try {
+        quotes[sym.toUpperCase()] = await this.getQuote(sym);
+      } catch (err) {
+        // Skip unavailable
+      }
     });
     await Promise.all(promises);
     return quotes;
   }
 
   /**
-   * Fetch historical series for a given timeframe
+   * Fetch historical series for a given timeframe.
+   * Throws an explicit error if the symbol is unavailable.
    */
   public async getHistory(symbol: string, timeframe: Timeframe): Promise<StockHistory> {
     const sym = symbol.toUpperCase();
@@ -223,14 +217,16 @@ export class FinanceDataService {
         const url = `${this.apiBaseUrl}/${encodeURIComponent(sym)}?range=${range}&interval=${interval}`;
         const response = await fetch(url);
         if (!response.ok) {
-          throw new Error(`Failed to fetch history for ${sym}: ${response.statusText}`);
+          throw new Error(`No data available for symbol '${sym}'`);
         }
         const data: YahooChartResponse = await response.json();
         const normalized = this.normalizeYahooResponse(sym, timeframe, data);
         return normalized.history;
       }
-    } catch (err) {
-      if (!this.useMockFallback) throw err;
+    } catch (err: any) {
+      if (!this.useMockFallback) {
+        throw new Error(err?.message || `No data available for symbol '${sym}'`);
+      }
     }
 
     return generateMockHistory(sym, timeframe);
@@ -242,7 +238,11 @@ export class FinanceDataService {
   public async getHistories(symbols: string[], timeframe: Timeframe): Promise<Record<string, StockHistory>> {
     const histories: Record<string, StockHistory> = {};
     const promises = symbols.map(async (sym) => {
-      histories[sym.toUpperCase()] = await this.getHistory(sym, timeframe);
+      try {
+        histories[sym.toUpperCase()] = await this.getHistory(sym, timeframe);
+      } catch (err) {
+        // Skip unavailable
+      }
     });
     await Promise.all(promises);
     return histories;

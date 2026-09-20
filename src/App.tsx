@@ -6,6 +6,7 @@ import { TimeframeSelector } from './components/dashboard/TimeframeSelector';
 import { TodaySummaryView } from './components/dashboard/TodaySummaryView';
 import { SevenDayTrendView } from './components/dashboard/SevenDayTrendView';
 import { QuarterComparisonView } from './components/dashboard/QuarterComparisonView';
+import { CustomCompanySection } from './components/dashboard/CustomCompanySection';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -80,6 +81,9 @@ export const App: React.FC = () => {
             loading={loading}
           />
         )}
+
+        {/* 4. ユーザー指定企業の追加グラフセクション (既存ダッシュボードを保持) */}
+        <CustomCompanySection timeframe={timeframe} />
       </div>
     </ErrorBoundary>
   );

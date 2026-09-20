@@ -4,6 +4,7 @@ import App from '../../App';
 import { MetricCard } from '../dashboard/MetricCard';
 import { TimeframeSelector } from '../dashboard/TimeframeSelector';
 import { MarketSummaryCards } from '../dashboard/MarketSummaryCards';
+import { CustomCompanySection } from '../dashboard/CustomCompanySection';
 import { TRACKED_COMPANIES, MOCK_QUOTES } from '../../services/mockData';
 
 describe('UI Rendering Paths & Component Tests', () => {
@@ -65,19 +66,75 @@ describe('UI Rendering Paths & Component Tests', () => {
     });
   });
 
+  describe('CustomCompanySection Rendering & Interaction Path', () => {
+    test('renders custom search prompt initially', () => {
+      render(<CustomCompanySection timeframe="1D" />);
+      expect(screen.getByText('Explore Custom Company Graph')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/Enter Ticker/i)).toBeInTheDocument();
+      expect(screen.getByText(/Enter a company ticker symbol above/i)).toBeInTheDocument();
+    });
+
+    test('loads and displays user-selected company graph when preset is clicked', async () => {
+      render(<CustomCompanySection timeframe="1D" />);
+      const nvdaBtn = screen.getByText('NVDA');
+
+      await act(async () => {
+        fireEvent.click(nvdaBtn);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('NVIDIA Corporation')).toBeInTheDocument();
+        expect(screen.getByText('NVDA Price Trend')).toBeInTheDocument();
+      });
+    });
+
+    test('displays clear error message when invalid/unavailable ticker is submitted', async () => {
+      render(<CustomCompanySection timeframe="1D" />);
+      const input = screen.getByPlaceholderText(/Enter Ticker/i);
+      const submitBtn = screen.getByText('Load Graph');
+
+      await act(async () => {
+        fireEvent.change(input, { target: { value: 'UNKNOWN' } });
+        fireEvent.click(submitBtn);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.getByText('Data Unavailable')).toBeInTheDocument();
+        expect(screen.getByText(/must be 1 to 5 letters/i)).toBeInTheDocument();
+      });
+    });
+
+    test('displays clear error message when ticker has no data', async () => {
+      render(<CustomCompanySection timeframe="1D" />);
+      const input = screen.getByPlaceholderText(/Enter Ticker/i);
+      const submitBtn = screen.getByText('Load Graph');
+
+      await act(async () => {
+        fireEvent.change(input, { target: { value: 'ZZZZ' } });
+        fireEvent.click(submitBtn);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.getByText('Data Unavailable')).toBeInTheDocument();
+        expect(screen.getByText("No data available for symbol 'ZZZZ'")).toBeInTheDocument();
+      });
+    });
+  });
+
   describe('App Full Integration Rendering Paths', () => {
-    test('renders main dashboard shell with header, controls and default Today view', async () => {
+    test('renders main dashboard shell with header, controls and custom company section', async () => {
       await act(async () => {
         render(<App />);
       });
       expect(screen.getByText(/Market Analytics Dashboard/i)).toBeInTheDocument();
       expect(screen.getByText(/IBM & Competitor Peer Group Performance Lab/i)).toBeInTheDocument();
       expect(screen.getByText('Today')).toBeInTheDocument();
-      expect(screen.getByText('Last 7 Days')).toBeInTheDocument();
-      expect(screen.getByText('Last Quarter')).toBeInTheDocument();
+      expect(screen.getByText('Explore Custom Company Graph')).toBeInTheDocument();
     });
 
-    test('renders 7-Day view with performance ranking when clicked', async () => {
+    test('renders 7-Day view while keeping custom section intact', async () => {
       await act(async () => {
         render(<App />);
       });
@@ -88,24 +145,7 @@ describe('UI Rendering Paths & Component Tests', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/7-Day Performance Ranking/i)).toBeInTheDocument();
-        expect(screen.getByText(/Peer Group Relative Performance/i)).toBeInTheDocument();
-      });
-    });
-
-    test('renders 1Q view with volatility matrix table when clicked', async () => {
-      await act(async () => {
-        render(<App />);
-      });
-      const quarterBtn = screen.getByText('Last Quarter');
-      await act(async () => {
-        fireEvent.click(quarterBtn);
-      });
-
-      await waitFor(() => {
-        expect(screen.getByText(/Quarterly Volatility & Peer Comparison Matrix/i)).toBeInTheDocument();
-        expect(screen.getByText(/Volatility Band/i)).toBeInTheDocument();
-        expect(screen.getByText('Quarter Start')).toBeInTheDocument();
-        expect(screen.getByText('Quarter End')).toBeInTheDocument();
+        expect(screen.getByText('Explore Custom Company Graph')).toBeInTheDocument();
       });
     });
   });

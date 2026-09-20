@@ -1,7 +1,31 @@
-import { validateStockQuote, validatePricePoints } from '../../utils/validation';
+import { validateStockQuote, validatePricePoints, validateTickerSymbol } from '../../utils/validation';
 import { StockQuote, PricePoint } from '../../services/types';
 
 describe('Validation Utility Tests', () => {
+  describe('validateTickerSymbol', () => {
+    test('passes for valid 1-5 letter ticker symbols', () => {
+      expect(validateTickerSymbol('IBM').isValid).toBe(true);
+      expect(validateTickerSymbol('NVDA').isValid).toBe(true);
+      expect(validateTickerSymbol('aapl').isValid).toBe(true); // lower-case normalized
+      expect(validateTickerSymbol('C').isValid).toBe(true);
+    });
+
+    test('fails for empty or whitespace-only symbols', () => {
+      const result = validateTickerSymbol('   ');
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Ticker symbol cannot be empty.');
+    });
+
+    test('fails for symbols with numbers, symbols, or over 5 letters', () => {
+      const invalidSymbols = ['AAPL1', 'GOOGL_X', 'TOOLONGTICKER', '$$$'];
+      invalidSymbols.forEach((sym) => {
+        const result = validateTickerSymbol(sym);
+        expect(result.isValid).toBe(false);
+        expect(result.errors[0]).toMatch(/must be 1 to 5 letters/i);
+      });
+    });
+  });
+
   describe('validateStockQuote', () => {
     test('passes for valid stock quote', () => {
       const validQuote: StockQuote = {

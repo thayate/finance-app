@@ -84,10 +84,73 @@ export const MOCK_QUOTES: Record<string, StockQuote> = {
     currency: 'USD',
     lastUpdated: new Date().toISOString(),
   },
+  NVDA: {
+    symbol: 'NVDA',
+    name: 'NVIDIA Corporation',
+    price: 128.90,
+    change: 4.10,
+    changePercent: 3.28,
+    high: 130.50,
+    low: 125.80,
+    open: 126.20,
+    previousClose: 124.80,
+    volume: 45200000,
+    marketCap: '3.16T',
+    currency: 'USD',
+    lastUpdated: new Date().toISOString(),
+  },
+  CRM: {
+    symbol: 'CRM',
+    name: 'Salesforce, Inc.',
+    price: 288.40,
+    change: 1.65,
+    changePercent: 0.58,
+    high: 291.00,
+    low: 286.50,
+    open: 287.00,
+    previousClose: 286.75,
+    volume: 4800000,
+    marketCap: '279.1B',
+    currency: 'USD',
+    lastUpdated: new Date().toISOString(),
+  },
+  AMZN: {
+    symbol: 'AMZN',
+    name: 'Amazon.com, Inc.',
+    price: 186.50,
+    change: 2.10,
+    changePercent: 1.14,
+    high: 187.80,
+    low: 184.20,
+    open: 185.00,
+    previousClose: 184.40,
+    volume: 29300000,
+    marketCap: '1.94T',
+    currency: 'USD',
+    lastUpdated: new Date().toISOString(),
+  },
+  INTC: {
+    symbol: 'INTC',
+    name: 'Intel Corporation',
+    price: 21.35,
+    change: -0.45,
+    changePercent: -2.06,
+    high: 21.90,
+    low: 21.10,
+    open: 21.80,
+    previousClose: 21.80,
+    volume: 52100000,
+    marketCap: '91.3B',
+    currency: 'USD',
+    lastUpdated: new Date().toISOString(),
+  },
 };
 
 export function generateMockHistory(symbol: string, timeframe: Timeframe): StockHistory {
-  const quote = MOCK_QUOTES[symbol] || MOCK_QUOTES.IBM;
+  const quote = MOCK_QUOTES[symbol];
+  if (!quote) {
+    throw new Error(`No data available for symbol '${symbol}'`);
+  }
   const basePrice = quote.previousClose;
   const points = [];
 
